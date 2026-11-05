@@ -45,6 +45,13 @@
       </label>
       <button type="submit" class="btn btn-primary">Search</button>
     </form>
+    <section id="compare-table" class="compare-table" aria-label="Side-by-side comparison" hidden>
+      <div class="compare-table-head">
+        <h2>Compare schools</h2>
+        <button id="compare-close" type="button" class="btn">Close</button>
+      </div>
+      <div class="table-scroll"><table></table></div>
+    </section>
     <p id="results-count" class="results-count" hidden></p>
     <p id="no-results" class="empty" hidden>No schools match your search. Try fewer filters.</p>
     <ol id="results" class="results"></ol>
@@ -52,6 +59,12 @@
   <footer class="site-footer">
     Demo with synthetic data. <a href="privacy.html">Privacy and cookies</a>
   </footer>
+  <aside id="compare-tray" class="compare-tray" aria-label="Compare tray" hidden>
+    <span class="tray-label">Compare</span>
+    <ol id="compare-list" class="compare-list"></ol>
+    <p id="compare-full" class="tray-note" hidden>You can compare up to 3 schools. Remove one to add another.</p>
+    <button id="compare-open" type="button" class="btn btn-primary" disabled>Compare now</button>
+  </aside>
   <div id="consent-banner" class="consent-banner" role="region" aria-label="Cookie consent" hidden>
     <p>We use cookies for analytics only after you agree. <a href="privacy.html">Learn more</a></p>
     <div class="consent-actions">

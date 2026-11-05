@@ -61,3 +61,21 @@ input, select, textarea {
 .card h3 a:hover { text-decoration: underline; }
 .card .meta, .card .rating { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.875rem; grid-column: 1; }
 .card .compare-btn { grid-column: 2; grid-row: 1 / span 3; }
+
+.compare-tray {
+  position: sticky; bottom: 0; max-width: 960px; margin: 0 auto; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px 8px 0 0; padding: 0.6rem 1rem;
+  display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+}
+.tray-label { font-weight: 600; }
+.compare-list { list-style: none; display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0; padding: 0; flex: 1; }
+.compare-list li { background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 0.1rem 0.7rem; font-size: 0.875rem; }
+.tray-note { margin: 0; color: var(--muted); font-size: 0.875rem; flex-basis: 100%; order: 3; }
+
+.compare-table { margin-top: 1.5rem; border: 1px solid var(--line); border-radius: 8px; padding: 1rem; }
+.compare-table-head { display: flex; justify-content: space-between; align-items: center; }
+.compare-table h2 { font-size: 1.1rem; margin: 0; }
+.table-scroll { overflow-x: auto; }
+.compare-table table { border-collapse: collapse; width: 100%; margin-top: 0.75rem; }
+.compare-table th, .compare-table td { text-align: left; padding: 0.5rem 0.75rem; border-top: 1px solid var(--line); vertical-align: top; }
+.compare-table th[scope="row"] { color: var(--muted); font-weight: 500; white-space: nowrap; }
