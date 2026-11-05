@@ -36,3 +36,4 @@ static site (GitHub Pages)              simulator (Playwright, local)
 | 6 | dbt and MetricFlow | pending |
 | 7 | Streamlit, Claude skills, A/B readout | pending |
 | 8 | Difference-in-differences | pending |
+| 9 | Readout deck | pending |

@@ -9,6 +9,7 @@ An end-to-end product measurement project on a fictional school-search marketpla
 - No agent declares a stage done without running its verification and showing the output.
 - Claude never computes numbers in prose: numbers come from SQL or Python, Claude narrates.
 - Every stage closes with the owner's approval, a commit and a README line.
+- Every number shown to anyone is registered in `validation/numbers.yaml` and recomputed by `tests/test_numbers.py`; results reach the owner only after `results-auditor` returns APPROVED.
 - The owner reviews every stage. Steps marked **[OWNER]** in a plan are done by the owner; stop and hand back.
 - All data is synthetic. No secrets in Git (`.env` is git-ignored).
 - Agents and skills carry no personal context (no employer names, no personal history).
