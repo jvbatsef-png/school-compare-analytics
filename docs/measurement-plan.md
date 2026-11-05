@@ -65,10 +65,10 @@ One definition per metric, used in the tracking spec, dbt and MetricFlow. All me
 
 | metric_id | type | definition | numerator | denominator | events_needed |
 |---|---|---|---|---|---|
-| lead_rate | primary | Share of visitors who send at least one info request | Visitors with at least one generate_lead | Visitors with at least one view_search_results | generate_lead, view_search_results |
-| profile_view_rate | guardrail | Share of visitors who open at least one school profile. Partners pay for profile visibility and the comparison table could cannibalize it | Visitors with at least one school_profile_view | Visitors with at least one view_search_results | school_profile_view, view_search_results |
+| lead_rate | primary | Share of visitors who send at least one info request | Visitors with at least one view_search_results and at least one generate_lead | Visitors with at least one view_search_results | generate_lead, view_search_results |
+| profile_view_rate | guardrail | Share of visitors who open at least one school profile. Partners pay for profile visibility and the comparison table could cannibalize it | Visitors with at least one view_search_results and at least one school_profile_view | Visitors with at least one view_search_results | school_profile_view, view_search_results |
 | complete_lead_share | guardrail | Share of info requests with the form complete (child's grade and phone filled). Lead quality: side-by-side could produce cold "request all four" leads | generate_lead events with form_complete true | All generate_lead events | generate_lead |
-| compare_adoption | secondary | Share of variant B visitors who use Compare (add at least one school). Does not decide the test; helps interpret it | Variant B visitors with at least one compare_add | Variant B visitors with at least one view_search_results | compare_add, view_search_results |
+| compare_adoption | secondary | Share of variant B visitors who use Compare (add at least one school). Does not decide the test; helps interpret it | Variant B visitors with at least one view_search_results and at least one compare_add | Variant B visitors with at least one view_search_results | compare_add, view_search_results |
 
 Notes:
 
@@ -93,5 +93,6 @@ A significant lead_rate gain with a significant guardrail drop is "do not ship":
 
 - **Consent and ad blockers** drop GA4 events. Some visitors and events are missing from GA4.
 - **GA4 is not the source of truth for counts.** The ground-truth log (the simulator's backend record) is. GA4 is the tool under test, and reconciliation measures the gap.
+- **The ship decision is read on the ground-truth log**, not on GA4, so consent loss does not shrink the sample the power analysis sized. The GA4 estimate is reported beside it.
 - **Equal gap in both arms (assumption).** Randomization is independent of consent, so the loss should affect A and B equally and leave the comparison unbiased. This is an assumption to verify, not a fact: it is checked in stage 5 by comparing GA4 against the ground-truth log per variant.
 - **Season.** The test runs in a single window with both arms in parallel, so season affects both equally. Do not compare results with other months.

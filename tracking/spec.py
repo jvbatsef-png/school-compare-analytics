@@ -23,7 +23,10 @@ def metric_events(md_path: str = str(PLAN_PATH)) -> dict[str, list[str]]:
         if not line.startswith("|"):
             break
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        result[cells[0]] = [e.strip() for e in cells[col].split(",") if e.strip()]
+        events = [e.strip() for e in cells[col].split(",") if e.strip()]
+        if not events:
+            raise ValueError(f"metric {cells[0]} lists no events")
+        result[cells[0]] = events
     return result
 
 

@@ -38,5 +38,6 @@ The simulator's true effect is +25% (15% → 18.75%), above the MDE. Power at th
 
 ## Notes
 
+- The decision readout runs on the ground-truth log, where every visitor counts, so n per arm is the full 2,399. GA4 loses visitors to consent and ad blockers: the same test read on GA4 data has fewer visitors and less power, and stage 7 shows that estimate next to the decision one.
 - The unit is the visitor who reached search results (triggered analysis, see `docs/measurement-plan.md`); every simulated visitor runs a search.
 - Guardrails are not powered separately; a significant drop is read as a stop signal, a non-significant one is not proof of no harm.

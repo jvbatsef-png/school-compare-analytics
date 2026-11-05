@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from tracking.spec import load_spec, metric_events
+from tracking.spec import PLAN_PATH, load_spec, metric_events
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 RESERVED_PREFIXES = ("google_", "ga_", "firebase_")
@@ -84,3 +84,23 @@ def test_metric_events_parses_table(tmp_path):
         encoding="utf-8",
     )
     assert metric_events(str(md)) == {"m1": ["a", "b"]}
+
+
+def test_metric_with_no_events_is_rejected(tmp_path):
+    md = tmp_path / "plan.md"
+    md.write_text("| metric_id | events_needed |\n|---|---|\n| revenue | |\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        metric_events(str(md))
+
+
+def test_triggered_numerators_stay_inside_denominator():
+    lines = PLAN_PATH.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, l in enumerate(lines) if l.replace(" ", "").startswith("|metric_id|"))
+    header = [c.strip() for c in lines[start].strip("|").split("|")]
+    num, den = header.index("numerator"), header.index("denominator")
+    for line in lines[start + 2:]:
+        if not line.startswith("|"):
+            break
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if "view_search_results" in cells[den]:
+            assert "view_search_results" in cells[num], f"{cells[0]} numerator is not limited to triggered visitors"
