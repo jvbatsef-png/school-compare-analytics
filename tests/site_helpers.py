@@ -11,6 +11,12 @@ def pushes(page) -> list[dict]:
     ).map(item => Object.assign({}, item))""")
 
 
+def layer(page) -> list:
+    """Every dataLayer item in order: gtag() calls as lists, event pushes as dicts."""
+    return page.evaluate("""() => (window.dataLayer || []).map(
+        item => typeof item.event === 'string' ? Object.assign({}, item) : Array.from(item))""")
+
+
 def events_named(page, name: str) -> list[dict]:
     return [p for p in pushes(page) if p["event"] == name]
 
