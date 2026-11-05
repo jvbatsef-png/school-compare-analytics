@@ -29,7 +29,7 @@ Working mode: slow and guided. The owner performs the manual steps (accounts, GT
 ```
 static site (GitHub Pages)              simulator (Playwright, local)
  search → card → Compare → Request info   ├─ visits the site as a real browser
- cookie banner (Consent Mode v2)          ├─ draws: consent? ad blocker? A/B variant
+ cookie banner (Consent Mode v2)          ├─ draws: consent? ad blocker? (reads the A/B variant the site assigned)
  dataLayer.push(...)                      └─ logs what it actually did → ground_truth.jsonl
         │
        GTM ──► GA4 (demo-only property) ──► daily export ──► BigQuery sandbox
