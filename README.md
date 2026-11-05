@@ -11,7 +11,7 @@ Everything is synthetic and runs at zero cost.
 ```
 static site (GitHub Pages)              simulator (Playwright, local)
  search → card → Compare → Request info   ├─ visits the site as a real browser
- cookie banner (Consent Mode v2)          ├─ draws: consent? ad blocker? A/B variant
+ cookie banner (Consent Mode v2)          ├─ draws: consent? ad blocker? (reads the A/B variant the site assigned)
  dataLayer.push(...)                      └─ logs what it actually did → ground_truth.jsonl
         │
        GTM ──► GA4 (demo-only property) ──► daily export ──► BigQuery sandbox
@@ -49,3 +49,15 @@ Everything here was decided before a single line of site code exists.
 - **Source of truth.** GA4 loses events to consent and ad blockers, so it is the tool under test, not the source of truth. The simulator's ground-truth log is, and stage 5 measures the gap per variant.
 
 Run the checks with `uv run pytest`.
+
+## Stage 2 — Site and dataLayer
+
+Live site: https://jvbatsef-png.github.io/school-compare-analytics/
+
+- **What it is.** Three plain HTML pages in [site/](site/), no framework and no build step: search with result cards, a school profile with a "Request info" form, and a privacy page. 200 fictional schools come from `scripts/make_schools.py` (fixed seed).
+- **A/B split.** On the first visit the site draws variant A or B with probability 0.5 and keeps it in `localStorage` (`sca_variant`). Only variant B shows the "Compare" button, the compare tray (up to 3 schools) and the side-by-side table.
+- **One writer.** `site/js/track.js` is the only code that pushes events. It adds `experiment_variant` to every funnel event and drops empty optional parameters. Nothing typed in the form reaches the dataLayer.
+- **Consent Mode v2.** Every page sets the four consent signals to denied before anything else loads; the banner updates them and then pushes `consent_update`. An empty slot in each page's `<head>` waits for the GTM snippet in stage 3.
+- **How events are tested.** Playwright tests (inside `uv run pytest`) click through the site in Chromium and check every push against [tracking/events.yaml](tracking/events.yaml): event name, required parameters, types, no undeclared keys. They also check the cases where an event must not fire: reload, back button, a fourth compare add, removing from the tray, a double click on submit, an invalid email.
+- **See it yourself.** Open the live site, press F12, open the Console, type `dataLayer` and press Enter after each click. To switch variant, delete `sca_variant` under Application → Local Storage and reload.
+- **Publishing.** [.github/workflows/pages.yml](.github/workflows/pages.yml) deploys `site/` to GitHub Pages on every push to `main`.
