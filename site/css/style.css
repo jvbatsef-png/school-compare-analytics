@@ -92,3 +92,7 @@ input, select, textarea {
 .lead-form .btn { justify-self: start; }
 .error { color: #b42318; margin: -0.4rem 0 0; font-size: 0.875rem; }
 .sent { border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: 0.75rem 1rem; }
+
+.prose { max-width: 680px; }
+.prose h2 { font-size: 1.1rem; margin-top: 1.5rem; }
+code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em; background: var(--soft); padding: 0.05rem 0.3rem; border-radius: 4px; }

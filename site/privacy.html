@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy and cookies — School Compare</title>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+  </script>
+  <!-- GTM slot: container snippet goes here in stage 3 -->
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/experiment.js" defer></script>
+  <script src="js/track.js" defer></script>
+  <script src="js/consent.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">School Compare</a>
+  </header>
+  <main class="page prose">
+    <h1>Privacy and cookies</h1>
+    <p>School Compare is a demo with synthetic school data. No real school receives your requests.</p>
+    <h2>What this site stores in your browser</h2>
+    <ul>
+      <li><code>sca_variant</code>: which version of the site you see (A or B), so it stays the same on every visit.</li>
+      <li><code>sca_consent</code>: your cookie choice, so the banner does not ask again.</li>
+    </ul>
+    <h2>Analytics</h2>
+    <p>Analytics and advertising storage start as denied. Analytics cookies are used only after you choose
+      "Accept all". You can change your choice by clearing this site's data in your browser.</p>
+    <h2>What is never sent</h2>
+    <p>Nothing you type in the "Request info" form (email, grade, start year or message) is sent to analytics.
+      Only whether the form was submitted and whether its optional fields were filled.</p>
+  </main>
+  <footer class="site-footer">
+    Demo with synthetic data. <a href="privacy.html">Privacy and cookies</a>
+  </footer>
+  <div id="consent-banner" class="consent-banner" role="region" aria-label="Cookie consent" hidden>
+    <p>We use cookies for analytics only after you agree. <a href="privacy.html">Learn more</a></p>
+    <div class="consent-actions">
+      <button id="consent-reject" type="button" class="btn">Reject all</button>
+      <button id="consent-accept" type="button" class="btn btn-primary">Accept all</button>
+    </div>
+  </div>
+</body>
+</html>
