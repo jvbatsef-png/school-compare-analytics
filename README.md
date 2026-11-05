@@ -28,7 +28,7 @@ static site (GitHub Pages)              simulator (Playwright, local)
 
 | # | Stage | Status |
 |---|---|---|
-| 1 | Measurement: plan, tracking spec, power analysis | in progress |
+| 1 | Measurement: plan, tracking spec, power analysis | done |
 | 2 | Site and dataLayer | pending |
 | 3 | GTM and GA4 | pending |
 | 4 | Simulated traffic and BigQuery export | pending |
@@ -37,3 +37,15 @@ static site (GitHub Pages)              simulator (Playwright, local)
 | 7 | Streamlit, Claude skills, A/B readout | pending |
 | 8 | Difference-in-differences | pending |
 | 9 | Readout deck | pending |
+
+## Stage 1 — Measurement
+
+Everything here was decided before a single line of site code exists.
+
+- **Question and decision rule.** Primary metric `lead_rate`: share of visitors who saw results and sent at least one info request. Guardrails: `profile_view_rate` and `complete_lead_share`. Ship only if `lead_rate` rises significantly and no guardrail drops. See [docs/measurement-plan.md](docs/measurement-plan.md).
+- **Comparison.** A/B test, randomized by visitor, read as intent-to-treat. Comparing "users who clicked Compare" with "users who did not" would mix the button's effect with selection bias.
+- **Event spec.** Six funnel events, GA4 recommended names where they exist (`search`, `view_search_results`, `generate_lead`), every one carrying `experiment_variant`, Consent Mode v2 defaults to denied. [tracking/events.yaml](tracking/events.yaml) is the source; [docs/tracking-spec.md](docs/tracking-spec.md) is generated from it, and tests enforce GA4 naming limits and metric-to-event coverage.
+- **Sample size.** Baseline 15%, minimum detectable effect +20% relative (15% → 18%), alpha 0.05 two-sided, power 0.80: **2,399 visitors per arm**, inside the 3,000-per-arm simulator budget. See [analysis/power_report.md](analysis/power_report.md); the numbers come from `analysis/power.py`.
+- **Source of truth.** GA4 loses events to consent and ad blockers, so it is the tool under test, not the source of truth. The simulator's ground-truth log is, and stage 5 measures the gap per variant.
+
+Run the checks with `uv run pytest`.
