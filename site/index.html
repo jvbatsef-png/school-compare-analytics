@@ -19,12 +19,36 @@
   <script src="js/experiment.js" defer></script>
   <script src="js/track.js" defer></script>
   <script src="js/consent.js" defer></script>
+  <script src="js/schools.js" defer></script>
+  <script src="js/search.js" defer></script>
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="index.html">School Compare</a>
   </header>
-  <main class="page"></main>
+  <main class="page">
+    <h1>Find a school</h1>
+    <form id="search-form" class="search-form" role="search">
+      <label>School name
+        <input id="q" name="q" type="text" placeholder="e.g. Oakwood">
+      </label>
+      <label>Level
+        <select id="level" name="level">
+          <option value="">Any level</option>
+          <option value="elementary">Elementary</option>
+          <option value="middle">Middle school</option>
+          <option value="high">High school</option>
+        </select>
+      </label>
+      <label>Location
+        <input id="location" name="location" type="text" placeholder="City or state, e.g. Austin, TX">
+      </label>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    <p id="results-count" class="results-count" hidden></p>
+    <p id="no-results" class="empty" hidden>No schools match your search. Try fewer filters.</p>
+    <ol id="results" class="results"></ol>
+  </main>
   <footer class="site-footer">
     Demo with synthetic data. <a href="privacy.html">Privacy and cookies</a>
   </footer>

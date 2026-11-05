@@ -31,6 +31,7 @@ def open_page(browser, site_url):
     def _open(path: str, variant: str | None = "B", consent: str | None = "denied",
               init_scripts: tuple[str, ...] = ()):
         context = browser.new_context()
+        context.set_default_timeout(5000)
         contexts.append(context)
         seeds = {k: v for k, v in {"sca_variant": variant, "sca_consent": consent}.items() if v}
         # Seed only absent keys, so the page's own writes survive a reload.
