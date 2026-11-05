@@ -84,3 +84,19 @@ def test_head_order():
         script_at = re.search(r"<script src=", html)
         assert -1 < default_at < slot_at, path.name
         assert script_at and slot_at < script_at.start(), path.name
+
+
+@pytest.mark.parametrize("state", ["granted", "denied"])
+def test_stored_consent_applied_in_head(open_page, state):
+    """A saved choice is re-applied right after the default, before any site script or GTM runs."""
+    # readyState turns "interactive" after parsing and before any deferred script runs.
+    snapshot = ("document.addEventListener('readystatechange', () => { if (document.readyState === 'interactive') "
+                "window.__early = window.dataLayer.map(i => Array.from(i)); });")
+    page = open_page("index.html", consent=state, init_scripts=(snapshot,))
+    expected = ["consent", "update", {k: state for k in load_spec()["consent"]}]
+    assert page.evaluate("window.__early")[1] == expected
+    items = layer(page)
+    assert sum(1 for it in items if isinstance(it, list) and it[:2] == ["consent", "update"]) == 1
+    for path in sorted(SITE_DIR.glob("*.html")):
+        html = path.read_text(encoding="utf-8")
+        assert -1 < html.find("sca_consent") < html.find("GTM slot"), path.name

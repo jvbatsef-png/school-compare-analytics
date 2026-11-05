@@ -133,6 +133,7 @@ window.SCA = window.SCA || {};
   }
 
   function openTable() {
+    if (tableOpen) return; // one compare_view per opening
     tableOpen = true;
     renderTable();
     document.getElementById("compare-table").hidden = false;

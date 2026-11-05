@@ -83,3 +83,12 @@ def test_comparison_links_carry_compare_source(open_page):
     page.click("#compare-open")
     hrefs = page.eval_on_selector_all("#compare-table a", "els => els.map(e => e.getAttribute('href'))")
     assert hrefs == [f"school.html?id={i}&src=compare" for i in card_ids(page)[:2]]
+
+
+def test_open_click_while_open_fires_nothing(open_page):
+    page = searched(open_page)
+    toggle(page, 1)
+    toggle(page, 2)
+    page.click("#compare-open")
+    page.click("#compare-open", force=True)
+    assert len(events_named(page, "compare_view")) == 1

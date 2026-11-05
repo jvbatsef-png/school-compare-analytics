@@ -13,6 +13,18 @@
       ad_user_data: 'denied',
       ad_personalization: 'denied'
     });
+    // A saved choice is re-applied here, before GTM sends its first hit.
+    try {
+      var savedConsent = localStorage.getItem('sca_consent');
+      if (savedConsent === 'granted' || savedConsent === 'denied') {
+        gtag('consent', 'update', {
+          analytics_storage: savedConsent,
+          ad_storage: savedConsent,
+          ad_user_data: savedConsent,
+          ad_personalization: savedConsent
+        });
+      }
+    } catch (e) { /* storage blocked: stay on the denied default */ }
   </script>
   <!-- GTM slot: container snippet goes here in stage 3 -->
   <link rel="stylesheet" href="css/style.css">

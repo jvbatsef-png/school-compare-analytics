@@ -1,4 +1,4 @@
-// Cookie banner and Consent Mode v2 updates. The default (all denied) is set inline in <head>.
+// Cookie banner and Consent Mode v2 updates. The default and any saved choice are set inline in <head>.
 window.SCA = window.SCA || {};
 
 (function () {
@@ -24,10 +24,7 @@ window.SCA = window.SCA || {};
   document.addEventListener("DOMContentLoaded", function () {
     var stored = null;
     try { stored = localStorage.getItem(KEY); } catch (e) { /* storage blocked */ }
-    if (stored === "granted" || stored === "denied") {
-      update(stored);
-      return;
-    }
+    if (stored === "granted" || stored === "denied") return; // re-applied inline in <head>
     banner().hidden = false;
     document.getElementById("consent-accept").addEventListener("click", function () { SCA.consent.save("granted"); });
     document.getElementById("consent-reject").addEventListener("click", function () { SCA.consent.save("denied"); });
