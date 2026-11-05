@@ -79,3 +79,16 @@ input, select, textarea {
 .compare-table table { border-collapse: collapse; width: 100%; margin-top: 0.75rem; }
 .compare-table th, .compare-table td { text-align: left; padding: 0.5rem 0.75rem; border-top: 1px solid var(--line); vertical-align: top; }
 .compare-table th[scope="row"] { color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+.profile h1 { margin-bottom: 0.75rem; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 0 0 1.5rem; }
+.facts div { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.8rem; }
+.facts dt { color: var(--muted); font-size: 0.8rem; }
+.facts dd { margin: 0; font-weight: 600; }
+.lead { max-width: 520px; }
+.lead h2 { font-size: 1.1rem; }
+.lead-form { display: grid; gap: 0.75rem; }
+.lead-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.lead-form .btn { justify-self: start; }
+.error { color: #b42318; margin: -0.4rem 0 0; font-size: 0.875rem; }
+.sent { border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: 0.75rem 1rem; }

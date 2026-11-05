@@ -20,12 +20,57 @@
   <script src="js/track.js" defer></script>
   <script src="js/consent.js" defer></script>
   <script src="js/schools.js" defer></script>
+  <script src="js/profile.js" defer></script>
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="index.html">School Compare</a>
   </header>
-  <main class="page"></main>
+  <main class="page">
+    <p><a href="index.html">← Back to search</a></p>
+    <p id="not-found" class="empty" hidden>School not found. <a href="index.html">Search for a school</a></p>
+    <article id="profile" class="profile" hidden>
+      <h1 id="school-name"></h1>
+      <dl class="facts">
+        <div><dt>Location</dt><dd id="school-location"></dd></div>
+        <div><dt>Level</dt><dd id="school-level"></dd></div>
+        <div><dt>Type</dt><dd id="school-type"></dd></div>
+        <div><dt>Rating</dt><dd id="school-rating"></dd></div>
+        <div><dt>Students</dt><dd id="school-students"></dd></div>
+        <div><dt>Tuition</dt><dd id="school-tuition"></dd></div>
+      </dl>
+      <section class="lead">
+        <h2>Request info</h2>
+        <form id="lead-form" class="lead-form" novalidate>
+          <label>Email (required)
+            <input id="email" name="email" type="email" autocomplete="email" required>
+          </label>
+          <p id="email-error" class="error" role="alert" hidden>Enter a valid email address.</p>
+          <div class="row">
+            <label>Grade
+              <select id="grade" name="grade">
+                <option value="">Select</option>
+                <option>Pre-K</option><option>K</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+                <option>5</option><option>6</option><option>7</option><option>8</option>
+                <option>9</option><option>10</option><option>11</option><option>12</option>
+              </select>
+            </label>
+            <label>Start year
+              <select id="start-year" name="start-year">
+                <option value="">Select</option>
+              </select>
+            </label>
+          </div>
+          <label>Message
+            <textarea id="message" name="message" rows="4"></textarea>
+          </label>
+          <button id="lead-submit" type="submit" class="btn btn-primary">Send request</button>
+        </form>
+        <p id="lead-sent" class="sent" role="status" hidden>Request sent. The school will contact you by email.</p>
+      </section>
+    </article>
+  </main>
   <footer class="site-footer">
     Demo with synthetic data. <a href="privacy.html">Privacy and cookies</a>
   </footer>
