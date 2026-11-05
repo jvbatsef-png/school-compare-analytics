@@ -15,10 +15,16 @@ class _QuietHandler(SimpleHTTPRequestHandler):
         pass
 
 
+class _Server(ThreadingHTTPServer):
+    # The default listen backlog (5) drops some of Chromium's parallel connections,
+    # which left a page waiting forever for one of its scripts.
+    request_queue_size = 128
+
+
 @pytest.fixture(scope="session")
 def site_url():
     handler = functools.partial(_QuietHandler, directory=str(SITE_DIR))
-    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    server = _Server(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_address[1]}/"
     server.shutdown()
