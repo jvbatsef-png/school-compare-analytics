@@ -29,7 +29,7 @@ static site (GitHub Pages)              simulator (Playwright, local)
 | # | Stage | Status |
 |---|---|---|
 | 1 | Measurement: plan, tracking spec, power analysis | done |
-| 2 | Site and dataLayer | pending |
+| 2 | Site and dataLayer | done |
 | 3 | GTM and GA4 | pending |
 | 4 | Simulated traffic and BigQuery export | pending |
 | 5 | DuckDB and reconciliation | pending |
