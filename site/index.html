@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Find a school — School Compare</title>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+    // A saved choice is re-applied here, before GTM sends its first hit.
+    try {
+      var savedConsent = localStorage.getItem('sca_consent');
+      if (savedConsent === 'granted' || savedConsent === 'denied') {
+        gtag('consent', 'update', {
+          analytics_storage: savedConsent,
+          ad_storage: savedConsent,
+          ad_user_data: savedConsent,
+          ad_personalization: savedConsent
+        });
+      }
+    } catch (e) { /* storage blocked: stay on the denied default */ }
+  </script>
+  <!-- GTM slot: container snippet goes here in stage 3 -->
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/experiment.js" defer></script>
+  <script src="js/track.js" defer></script>
+  <script src="js/consent.js" defer></script>
+  <script src="js/schools.js" defer></script>
+  <script src="js/search.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">School Compare</a>
+  </header>
+  <main class="page">
+    <h1>Find a school</h1>
+    <form id="search-form" class="search-form" role="search">
+      <label>School name
+        <input id="q" name="q" type="text" placeholder="e.g. Oakwood">
+      </label>
+      <label>Level
+        <select id="level" name="level">
+          <option value="">Any level</option>
+          <option value="elementary">Elementary</option>
+          <option value="middle">Middle school</option>
+          <option value="high">High school</option>
+        </select>
+      </label>
+      <label>Location
+        <input id="location" name="location" type="text" placeholder="City or state, e.g. Austin, TX">
+      </label>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    <section id="compare-table" class="compare-table" aria-label="Side-by-side comparison" hidden>
+      <div class="compare-table-head">
+        <h2>Compare schools</h2>
+        <button id="compare-close" type="button" class="btn">Close</button>
+      </div>
+      <div class="table-scroll"><table></table></div>
+    </section>
+    <p id="results-count" class="results-count" hidden></p>
+    <p id="no-results" class="empty" hidden>No schools match your search. Try fewer filters.</p>
+    <ol id="results" class="results"></ol>
+  </main>
+  <footer class="site-footer">
+    Demo with synthetic data. <a href="privacy.html">Privacy and cookies</a>
+  </footer>
+  <aside id="compare-tray" class="compare-tray" aria-label="Compare tray" hidden>
+    <span class="tray-label">Compare</span>
+    <ol id="compare-list" class="compare-list"></ol>
+    <p id="compare-full" class="tray-note" hidden>You can compare up to 3 schools. Remove one to add another.</p>
+    <button id="compare-open" type="button" class="btn btn-primary" disabled>Compare now</button>
+  </aside>
+  <div id="consent-banner" class="consent-banner" role="region" aria-label="Cookie consent" hidden>
+    <p>We use cookies for analytics only after you agree. <a href="privacy.html">Learn more</a></p>
+    <div class="consent-actions">
+      <button id="consent-reject" type="button" class="btn">Reject all</button>
+      <button id="consent-accept" type="button" class="btn btn-primary">Accept all</button>
+    </div>
+  </div>
+</body>
+</html>
