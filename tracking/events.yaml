@@ -1,0 +1,76 @@
+# Source of truth for GA4 tracking. docs/tracking-spec.md is generated from this file.
+consent:
+  analytics_storage: denied
+  ad_storage: denied
+  ad_user_data: denied
+  ad_personalization: denied
+
+datalayer_contract: |
+  // One push per event. Names and param keys must match this spec exactly. No personal data.
+  window.dataLayer.push({
+    event: "compare_add",
+    experiment_variant: "B",
+    school_id: "sch_042",
+    list_position: 3,
+    compare_count: 2
+  });
+
+events:
+  - name: search
+    trigger: Fires once when the visitor submits a school search; it must not fire again on re-render or when the same results page reloads.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: B}
+      - {name: search_term, type: string, required: false, example: "montessori"}
+      - {name: school_level, type: string, required: false, example: elementary}
+      - {name: location, type: string, required: false, example: "Austin, TX"}
+
+  - name: view_search_results
+    trigger: Fires once per results list shown after a search; it must not fire again when the visitor scrolls, filters in place or returns by back button without a new search.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: B}
+      - {name: search_term, type: string, required: false, example: "montessori"}
+      - {name: results_count, type: int, required: true, example: 24}
+
+  - name: compare_add
+    trigger: Fires each time the visitor adds a school to the compare tray (variant B only); it must not fire when a school is removed or when the add is rejected because the tray is full.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: B}
+      - {name: school_id, type: string, required: true, example: sch_042}
+      - {name: list_position, type: int, required: true, example: 3}
+      - {name: compare_count, type: int, required: true, example: 2}
+
+  - name: compare_view
+    trigger: Fires once each time the side-by-side table opens (variant B only); it must not fire again on re-render or when the visitor only changes tray contents while it is open.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: B}
+      - {name: compare_count, type: int, required: true, example: 3}
+      - {name: school_ids, type: string, required: true, example: "sch_042,sch_077,sch_103"}
+
+  - name: school_profile_view
+    trigger: Fires once when a school profile page is shown, from a card, from the comparison or by direct link; it must not fire again on tab switches within the same profile.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: A}
+      - {name: school_id, type: string, required: true, example: sch_042}
+      - {name: source, type: string, required: true, example: results}
+
+  - name: generate_lead
+    trigger: Fires once per "Request info" form that is successfully submitted to a school; it must not fire on failed submissions or on double clicks of the same submit.
+    funnel: true
+    params:
+      - {name: experiment_variant, type: string, required: true, example: B}
+      - {name: school_id, type: string, required: true, example: sch_042}
+      - {name: source, type: string, required: true, example: compare}
+      - {name: form_complete, type: bool, required: true, example: true}
+      - {name: lead_type, type: string, required: false, example: info_request}
+
+  - name: consent_update
+    trigger: Fires once each time the visitor saves a choice in the consent banner, after Consent Mode is updated.
+    funnel: false
+    params:
+      - {name: analytics_storage, type: string, required: true, example: granted}
+      - {name: ad_storage, type: string, required: true, example: denied}

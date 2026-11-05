@@ -67,7 +67,8 @@ school-compare-analytics/
 ├─ CLAUDE.md                    project rules for Claude
 ├─ .claude/
 │  ├─ agents/                   head-of-analytics, business-analyst, product-analyst,
-│  │                            gtm-engineer, data-engineer, statistician
+│  │                            gtm-engineer, data-engineer, statistician, insights-presenter,
+│  │                            results-auditor
 │  └─ skills/                   school-metrics, launch-readout, measurement-gap-check
 ├─ docs/
 │  ├─ superpowers/specs/        this spec
@@ -78,6 +79,7 @@ school-compare-analytics/
 ├─ simulator/                   Playwright traffic + DiD history generator
 ├─ warehouse/                   BigQuery → DuckDB loader (.duckdb file git-ignored)
 ├─ dbt/                         models, tests, semantic models
+├─ validation/                  numbers.yaml: registry of every published number
 ├─ app/                         Streamlit
 └─ analysis/                    power analysis, A/B readout, DiD
 ```
@@ -93,7 +95,11 @@ Project-specific agents in `.claude/agents/`, written for this repository and fr
 | product-analyst | Measurement requirements, funnel, primary/secondary/guardrail metrics, GA4 event spec. |
 | gtm-engineer | dataLayer contract, GTM tags/triggers/variables, Consent Mode v2, Preview and DebugView QA script. |
 | data-engineer | Simulator, BigQuery export and DuckDB load, dbt models and tests, DiD history. |
-| statistician | Power analysis, A/B design and readout, confidence intervals in the reconciliation, DiD, honest signal-versus-noise calls. |
+| statistician | Power analysis, A/B design and readout, confidence intervals in the reconciliation, DiD, honest signal-versus-noise calls; explains every result in plain words (is it real, is it causal, how big, does it matter). |
+| insights-presenter | Streamlit self-serve app (stage 7) and, optionally, the readout deck (stage 9). Never computes numbers; reads only validated metrics. |
+| results-auditor | Independent, sceptical validation at the end of stages 5, 7, 8 and 9: recomputes every published number from raw data by a different path, checks lineage and experiment validity, returns APPROVED or REJECTED. Runs queries; edits nothing. |
+
+Every agent is written as a senior specialist in its field: what it masters, the checks it runs, the pitfalls it catches.
 
 ## 7. Product skills (deliverables for the "Claude-powered analytics" block)
 
@@ -115,8 +121,9 @@ Each stage is its own session with its own implementation plan. Each ends with t
 | 4 | Traffic and export | data-engineer, statistician | enable BigQuery export, run the simulator | data in BigQuery, ground-truth log |
 | 5 | DuckDB and reconciliation | data-engineer, statistician | explain the GA4-versus-truth gap | reconciliation report |
 | 6 | dbt and MetricFlow | data-engineer, product-analyst | run `dbt build`, query metrics | tested models, sanctioned metrics |
-| 7 | Streamlit, skills, readout | all | use the app, review the generated readout | app, 3 skills, A/B readout |
+| 7 | Streamlit, skills, readout | insights-presenter, statistician, business-analyst | use the app, review the generated readout | app, 3 skills, A/B readout |
 | 8 | Difference-in-differences | data-engineer, statistician | interpret the result | DiD analysis (optional) |
+| 9 | Readout deck | insights-presenter, business-analyst, statistician | present it out loud | deck covering reconciliation, A/B and DiD (optional) |
 
 ## 9. Verification
 
@@ -131,6 +138,12 @@ The ground truth is known, so every analysis is tested against it.
 | 6 | `dbt build` passes (unique, not-null, accepted-values tests); each MetricFlow metric matches a hand-written SQL query. |
 | 7 | Every number in the generated readout is re-checked by a second query; the estimated A/B effect lands near the true effect, inside its CI. |
 | 8 | DiD recovers the true effect; naive pre/post does not. |
+| 9 | Every number on the deck matches the app and the readout. |
+
+**Validation layer (from stage 5 on).** Whoever produces a number does not get to be the only one who checks it.
+
+- **Number registry:** `validation/numbers.yaml` lists every number shown to anyone (readout, app, deck) with its value, source query and tolerance. `tests/test_numbers.py` recomputes each one, and checks lineage totals along ground truth → DuckDB → dbt marts → MetricFlow. The app, the deck and the `launch-readout` skill show only registered numbers.
+- **Independent audit:** `results-auditor` recomputes headline numbers by its own path from raw data and must return APPROVED before results reach the owner.
 
 Project rules (go into `CLAUDE.md`):
 

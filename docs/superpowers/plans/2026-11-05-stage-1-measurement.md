@@ -58,7 +58,7 @@
 ```python
 AGENTS = ["head-of-analytics", "business-analyst", "product-analyst",
           "gtm-engineer", "data-engineer", "statistician"]
-FORBIDDEN = []  # forbidden terms live in the git-ignored .private-terms file
+# forbidden terms live in the git-ignored .private-terms file (owner's machine only)
 
 def test_all_agents_exist_with_frontmatter():  # name == file stem, description non-empty
 def test_agents_have_no_personal_context():    # no FORBIDDEN term, whole word, case-insensitive
