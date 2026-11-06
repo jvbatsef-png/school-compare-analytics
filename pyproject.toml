@@ -12,3 +12,7 @@ dev = [
     "pytest>=9.2.0",
     "pytest-playwright>=0.10.0",
 ]
+
+[tool.pytest.ini_options]
+markers = ["live: hits the published site; run with -m live"]
+addopts = "-m 'not live'"
