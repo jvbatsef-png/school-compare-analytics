@@ -7,7 +7,8 @@ RESULTS_SHOWN = "() => document.querySelector('#results .card') || !document.que
 def search(page, q="", level="", location=""):
     page.fill("#q", q)
     page.select_option("#level", level)
-    page.fill("#location", location)
+    page.wait_for_selector("#location option:nth-child(2)", state="attached")
+    page.select_option("#location", location)
     page.click("#search-form button[type=submit]")
     page.wait_for_function("() => dataLayer.some(i => i.event === 'view_search_results')")
 
@@ -40,11 +41,11 @@ def test_empty_optional_fields_are_omitted(open_page):
 
 def test_filters_by_level_and_location(open_page):
     page = open_page("index.html")
-    search(page, level="high", location="austin, tx")
+    search(page, level="high", location="Austin, TX")
     expected = [s["id"] for s in make_schools() if s["level"] == "high" and (s["city"], s["state"]) == ("Austin", "TX")]
     assert sorted(card_ids(page)) == sorted(expected)
     [s] = events_named(page, "search")
-    assert (s["school_level"], s["location"]) == ("high", "austin, tx")
+    assert (s["school_level"], s["location"]) == ("high", "Austin, TX")
 
 
 def test_zero_results(open_page):
@@ -87,3 +88,29 @@ def test_variant_b_has_compare_button(open_page):
     page = open_page("index.html", variant="B")
     search(page)
     assert page.locator(".card .compare-btn").count() == 200
+
+
+def test_location_options(open_page):
+    # built from data, "Any location" first, then sorted unique "City, ST"
+    page = open_page("index.html")
+    page.wait_for_selector("#location option:nth-child(2)", state="attached")
+    values = page.eval_on_selector_all("#location option", "els => els.map(e => e.value)")
+    labels = page.eval_on_selector_all("#location option", "els => els.map(e => e.textContent)")
+    expected = sorted({f'{s["city"]}, {s["state"]}' for s in make_schools()})
+    assert values == [""] + expected and labels[0] == "Any location"
+
+
+def test_location_restored_from_url(open_page):
+    page = open_page("index.html?location=Austin%2C+TX")
+    page.wait_for_selector("#results .card")
+    assert page.input_value("#location") == "Austin, TX"
+    assert all("Austin, TX" in m for m in page.eval_on_selector_all("#results .meta", "els => els.map(e => e.textContent)"))
+
+
+def test_unknown_location_is_ignored(open_page):
+    page = open_page("index.html?location=tx")
+    page.wait_for_selector("#results .card")
+    assert page.input_value("#location") == ""
+    search(page)
+    [s] = events_named(page, "search")
+    assert "location" not in s

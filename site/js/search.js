@@ -14,11 +14,11 @@ window.SCA = window.SCA || {};
   }
 
   function filter(schools, v) {
-    var q = v.q.toLowerCase(), loc = v.location.toLowerCase();
+    var q = v.q.toLowerCase();
     return schools.filter(function (s) {
       return (!q || s.name.toLowerCase().indexOf(q) !== -1) &&
         (!v.level || s.level === v.level) &&
-        (!loc || (s.city + ", " + s.state).toLowerCase().indexOf(loc) !== -1);
+        (!v.location || s.city + ", " + s.state === v.location);
     }).sort(function (a, b) { return b.rating - a.rating || (a.id < b.id ? -1 : 1); });
   }
 
@@ -156,6 +156,19 @@ window.SCA = window.SCA || {};
     renderTray();
   }
 
+  // Location is a closed list of "City, ST" values, so GA4 gets one clean value per city.
+  function buildLocations(schools) {
+    var seen = {};
+    schools.forEach(function (s) { seen[s.city + ", " + s.state] = true; });
+    var select = document.getElementById("location");
+    Object.keys(seen).sort().forEach(function (loc) {
+      var opt = document.createElement("option");
+      opt.value = loc;
+      opt.textContent = loc;
+      select.appendChild(opt);
+    });
+  }
+
   SCA.shownSchools = function () { return shown; };
 
   function onSubmit(e) {
@@ -177,11 +190,16 @@ window.SCA = window.SCA || {};
     document.getElementById("search-form").addEventListener("submit", onSubmit);
     document.getElementById("compare-open").addEventListener("click", openTable);
     document.getElementById("compare-close").addEventListener("click", closeTable);
-    var params = new URLSearchParams(location.search);
-    var restore = FIELDS.some(function (f) { return params.has(f); });
-    if (!restore) return;
-    FIELDS.forEach(function (f) { document.getElementById(f).value = params.get(f) || ""; });
-    var v = readForm();
-    SCA.loadSchools().then(function (schools) { render(filter(schools, v)); });
+    SCA.loadSchools().then(function (schools) {
+      buildLocations(schools);
+      // Restore runs after the options exist, so a saved location can be selected.
+      var params = new URLSearchParams(location.search);
+      var restore = FIELDS.some(function (f) { return params.has(f); });
+      if (!restore) return;
+      FIELDS.forEach(function (f) { document.getElementById(f).value = params.get(f) || ""; });
+      var select = document.getElementById("location");
+      if (select.selectedIndex === -1) select.selectedIndex = 0; // unknown value: Any location
+      render(filter(schools, readForm()));
+    });
   });
 })();
