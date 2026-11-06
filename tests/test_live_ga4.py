@@ -58,11 +58,15 @@ def test_live_granted_journey(live):
     assert all(h["gcs"] == DENIED for h in hits), [h["gcs"] for h in hits]
 
     page.click("#consent-accept")
-    search(page, location="Austin, TX")
+    # A term puts ?q= in the URL, which is what enhanced measurement "Site search" would react to.
+    search(page, q="school", location="Austin, TX")
     ids = card_ids(page)
     toggle(page, 1)
     toggle(page, 2)
     page.click("#compare-open")
+    # gtag.js batches hits; read them before leaving the page so none is flushed by an unload beacon.
+    for event in ("consent_update", "search", "view_search_results", "compare_add", "compare_view"):
+        _wait_for(page, hits, event)
     page.click(f"#compare-table a[href*='{ids[1]}']")
     page.wait_for_function(PROFILE_READY)
     submit_lead(page)
@@ -80,8 +84,25 @@ def test_live_granted_journey(live):
             assert not missing, (event["name"], missing)
             extra = {k for k in h if k.startswith(("ep.", "epn."))} - allowed
             assert not extra, (event["name"], extra)
-    assert len([h for h in after if h.get("en") == "view_search_results"]) == 1
+    [results_hit] = [h for h in after if h.get("en") == "view_search_results"]
+    assert results_hit.get("ep.search_term") == "school"
     assert any(c["name"] == "_ga" for c in page.context.cookies())
+
+
+def test_live_cleared_fields_not_resent(live):
+    # A second search with empty fields must not carry the first search's values (GTM data model).
+    page, hits = live
+    page.click("#consent-accept")
+    search(page, q="school", level="high", location="Austin, TX")
+    search(page)
+    page.wait_for_function("() => dataLayer.filter(i => i.event === 'search').length === 2")
+    for _ in range(20):
+        if len([h for h in hits if h.get("en") == "search"]) == 2:
+            break
+        page.wait_for_timeout(500)
+    first, second = [h for h in hits if h.get("en") == "search"]
+    assert first.get("ep.location") == "Austin, TX"
+    assert not {"ep.search_term", "ep.school_level", "ep.location"} & set(second), second
 
 
 def test_live_denied_hits_are_cookieless(live):
