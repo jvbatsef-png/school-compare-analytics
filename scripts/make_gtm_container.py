@@ -14,7 +14,6 @@ ROOT = Path(__file__).resolve().parent.parent
 IDS_PATH = ROOT / "tracking" / "gtm" / "ids.yaml"
 CONTAINER_PATH = ROOT / "tracking" / "gtm" / "container.json"
 INIT_ALL_PAGES = "2147479573"  # GTM's built-in "Initialization - All Pages" trigger
-SCOPE = {"accountId": "0", "containerId": "0"}
 
 
 def load_ids(path: Path = IDS_PATH) -> dict[str, str]:
@@ -26,14 +25,14 @@ def _template(key: str, value: str) -> dict:
 
 
 def _variable(var_id: str, param: str) -> dict:
-    return {**SCOPE, "variableId": var_id, "name": f"dlv - {param}", "type": "v", "parameter": [
+    return {"variableId": var_id, "name": f"dlv - {param}", "type": "v", "parameter": [
         {"type": "INTEGER", "key": "dataLayerVersion", "value": "2"},
         {"type": "BOOLEAN", "key": "setDefaultValue", "value": "false"},
         _template("name", param)]}
 
 
 def _trigger(trigger_id: str, event: str) -> dict:
-    return {**SCOPE, "triggerId": trigger_id, "name": f"ce - {event}", "type": "CUSTOM_EVENT",
+    return {"triggerId": trigger_id, "name": f"ce - {event}", "type": "CUSTOM_EVENT",
             "customEventFilter": [{"type": "EQUALS", "parameter": [
                 _template("arg0", "{{_event}}"), _template("arg1", event)]}]}
 
@@ -42,7 +41,7 @@ def _event_tag(tag_id: str, event: dict, measurement_id: str, trigger_id: str) -
     rows = [{"type": "MAP", "map": [_template("parameter", p["name"]),
                                     _template("parameterValue", f"{{{{dlv - {p['name']}}}}}")]}
             for p in event["params"]]
-    return {**SCOPE, "tagId": tag_id, "name": f"GA4 event - {event['name']}", "type": "gaawe",
+    return {"tagId": tag_id, "name": f"GA4 event - {event['name']}", "type": "gaawe",
             "parameter": [_template("eventName", event["name"]),
                           _template("measurementIdOverride", measurement_id),
                           {"type": "LIST", "key": "eventSettingsTable", "list": rows}],
@@ -64,7 +63,7 @@ def build_container(spec: dict, ids: dict) -> dict:
             if param["name"] not in variables:
                 variables[param["name"]] = _variable(next_id(), param["name"])
 
-    tags = [{**SCOPE, "tagId": next_id(), "name": "Google tag", "type": "googtag",
+    tags = [{"tagId": next_id(), "name": "Google tag", "type": "googtag",
              "parameter": [_template("tagId", measurement_id)], "firingTriggerId": [INIT_ALL_PAGES]}]
     triggers = []
     for event in spec["events"]:
@@ -72,10 +71,12 @@ def build_container(spec: dict, ids: dict) -> dict:
         triggers.append(trigger)
         tags.append(_event_tag(next_id(), event, measurement_id, trigger["triggerId"]))
 
+    # GTM's import answers "Not found" without the container block; account/container numbers are not needed.
+    container = {"publicId": ids["gtm_container_id"], "usageContext": ["WEB"]}
     return {"exportFormatVersion": 2, "containerVersion": {
-        **SCOPE, "tag": tags, "trigger": triggers, "variable": list(variables.values()),
+        "container": container, "tag": tags, "trigger": triggers, "variable": list(variables.values()),
         # {{_event}} in the triggers is GTM's built-in Event variable.
-        "builtInVariable": [{**SCOPE, "type": "EVENT", "name": "Event"}]}}
+        "builtInVariable": [{"type": "EVENT", "name": "Event"}]}}
 
 
 def render(container: dict) -> str:

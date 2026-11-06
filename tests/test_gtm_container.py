@@ -40,6 +40,13 @@ def test_ids_format():
     assert re.fullmatch(r"G-[A-Z0-9]+", ids["ga4_measurement_id"])
 
 
+def test_envelope_names_the_web_container(spec, ids):
+    # GTM's import answers "Not found" without this block; account/container numbers are not needed.
+    c = build_container(spec, ids)
+    assert c["containerVersion"]["container"] == {"publicId": ids["gtm_container_id"], "usageContext": ["WEB"]}
+    assert '"accountId"' not in render(c) and '"containerId"' not in render(c)
+
+
 def test_container_file_is_current():
     assert CONTAINER_PATH.read_text(encoding="utf-8") == render(build_container(load_spec(), load_ids()))
 
