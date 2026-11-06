@@ -30,7 +30,7 @@ static site (GitHub Pages)              simulator (Playwright, local)
 |---|---|---|
 | 1 | Measurement: plan, tracking spec, power analysis | done |
 | 2 | Site and dataLayer | done |
-| 3 | GTM and GA4 | pending |
+| 3 | GTM and GA4 | done |
 | 4 | Simulated traffic and BigQuery export | pending |
 | 5 | DuckDB and reconciliation | pending |
 | 6 | dbt and MetricFlow | pending |
@@ -61,3 +61,10 @@ Live site: https://jvbatsef-png.github.io/school-compare-analytics/
 - **How events are tested.** Playwright tests (inside `uv run pytest`) click through the site in Chromium and check every push against [tracking/events.yaml](tracking/events.yaml): event name, required parameters, types, no undeclared keys. They also check the cases where an event must not fire: reload, back button, a fourth compare add, removing from the tray, a double click on submit, an invalid email.
 - **See it yourself.** Open the live site, press F12, open the Console, type `dataLayer` and press Enter after each click. To switch variant, delete `sca_variant` under Application → Local Storage and reload.
 - **Publishing.** [.github/workflows/pages.yml](.github/workflows/pages.yml) deploys `site/` to GitHub Pages on every push to `main`.
+
+## Stage 3 — GTM and GA4
+
+- **Container from code.** [scripts/make_gtm_container.py](scripts/make_gtm_container.py) turns [tracking/events.yaml](tracking/events.yaml) into [tracking/gtm/container.json](tracking/gtm/container.json): one GA4 event tag per event, its trigger and its dataLayer variables. The file is imported into GTM, never built by hand; a test fails if it drifts from the YAML. Public IDs live in [tracking/gtm/ids.yaml](tracking/gtm/ids.yaml).
+- **Consent Mode v2, advanced.** GA4 tags load even when consent is denied and send cookieless pings, so stage 5 can tell "declined" apart from "never reached GA4".
+- **GA4 settings.** Enhanced measurement keeps page views but drops site search, form interactions and page views on history changes (each would duplicate or invent events). 7 event-scoped custom dimensions and 3 custom metrics are registered, and `generate_lead` is the key event.
+- **Three layers of checks.** Offline tests (container matches the YAML, snippet on every page, site works with GTM blocked); a live test (`uv run pytest -m live`) that captures and blocks the real `/g/collect` hits on the published site; and a manual run in GTM Preview with screenshots: [tracking/gtm/qa-script.md](tracking/gtm/qa-script.md).
