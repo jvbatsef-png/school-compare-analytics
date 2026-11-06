@@ -1,14 +1,25 @@
-"""Browser executor: plays one simulated visitor on the site and logs what the page actually pushed.
+"""Browser executor: plays simulated visitors on the site and logs what the page actually pushed.
 
 The site draws the A/B variant; the executor reads it after load and asks the behaviour model for a plan.
+
+uv run python -m simulator.browser_run --target 20 [--headed]
 """
+import argparse
+import queue
 import re
+import threading
 import time
+from pathlib import Path
 
-from playwright.sync_api import BrowserContext, Error as PlaywrightError
+from playwright.sync_api import BrowserContext, Error as PlaywrightError, sync_playwright
 
-from simulator.behavior import Search, Visitor, plan_visit, visitor_rng
-from simulator.ground_truth import utc_now, visitor_lines
+from simulator.behavior import (
+    ROOT, Search, Visitor, draw_visitor, load_config, load_schools, plan_visit, search_options, visitor_rng,
+)
+from simulator.ground_truth import append, by_visitor, read, utc_now, visitor_lines
+
+OUT_PATH = ROOT / "simulator" / "runs" / "real_run.jsonl"
+VISIT_TIMEOUT_MS = 15000
 
 GOOGLE_HOSTS = re.compile(r"https://([a-z0-9-]+\.)*(googletagmanager|google-analytics)\.com/")
 COLLECT = re.compile(r"/g/collect")
@@ -145,3 +156,108 @@ def visit(context: BrowserContext, site_url: str, visitor_id: str, visitor: Visi
     client_id = _client_id(context) if visitor.banner == "accept" and not visitor.ad_blocker else None
     return visitor_lines("real", visitor_id, variant, visitor, log.events, client_id, len(sent), status,
                          step if status == "error" else None, end_ts=utc_now())
+
+
+class RunAborted(RuntimeError):
+    pass
+
+
+def close_interrupted(lines: list[dict]) -> list[dict]:
+    """visit_end lines for visitors cut off mid-visit. They count toward the target and are never re-run:
+    their hits may already have reached GA4."""
+    ends = []
+    for visitor_id, own in by_visitor(lines).items():
+        if own[-1]["event"] != "visit_end":
+            last = own[-1]
+            ends.append({**last, "seq": last["seq"] + 1, "ga_requests": None, "status": "error",
+                         "error_step": "interrupted", "event": "visit_end", "params": {}})
+    return ends
+
+
+def next_ids(lines: list[dict], target: int) -> list[str]:
+    done = [int(v[1:]) for v in by_visitor(lines)]
+    start = max(done, default=0) + 1
+    return [f"v{n:05d}" for n in range(start, target + 1)]
+
+
+def should_abort(lines: list[dict], max_rate: float, min_finished: int) -> bool:
+    ends = [line for line in lines if line["event"] == "visit_end"]
+    if len(ends) < min_finished:
+        return False
+    return sum(e["status"] == "error" for e in ends) / len(ends) > max_rate
+
+
+def run_real(cfg: dict, target: int, out_path: Path, site_url: str, workers: int,
+             offline: bool = False, headed: bool = False) -> None:
+    """Run visitors until out_path holds `target` of them; `offline` aborts Google hosts (tests only)."""
+    existing = read(out_path) if out_path.exists() else []
+    closed = close_interrupted(existing)
+    if closed:
+        append(out_path, closed)
+    ends = [line for line in existing + closed if line["event"] == "visit_end"]
+    todo: queue.Queue[str] = queue.Queue()
+    for visitor_id in next_ids(existing + closed, target):
+        todo.put(visitor_id)
+    schools = load_schools()
+    options = search_options(schools)
+    lock = threading.Lock()
+    stop = threading.Event()
+    failures: list[BaseException] = []
+
+    def worker() -> None:
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=not headed)
+                while not stop.is_set():
+                    try:
+                        visitor_id = todo.get_nowait()
+                    except queue.Empty:
+                        break
+                    visitor = draw_visitor(visitor_rng(cfg["seed"], visitor_id), cfg)
+                    context = browser.new_context(user_agent=USER_AGENT, viewport={"width": 1366, "height": 768})
+                    context.set_default_timeout(VISIT_TIMEOUT_MS)
+                    if offline:
+                        context.route(GOOGLE_HOSTS, lambda route: route.abort())
+                    try:
+                        lines = visit(context, site_url, visitor_id, visitor, cfg, schools, options)
+                    finally:
+                        context.close()
+                    with lock:
+                        append(out_path, lines)
+                        ends.append(lines[-1])
+                        real = cfg["real"]
+                        if should_abort(ends, real["max_error_rate"], real["min_visitors_before_abort"]):
+                            stop.set()
+                browser.close()
+        except BaseException as exc:  # a broken worker stops the run instead of dying silently
+            failures.append(exc)
+            stop.set()
+
+    threads = [threading.Thread(target=worker) for _ in range(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    if failures:
+        raise failures[0]
+    if stop.is_set():
+        errors = sum(e["status"] == "error" for e in ends)
+        raise RunAborted(f"{errors} of {len(ends)} visitors failed; stopped above the error threshold")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Simulated visitors on the live site (real run).")
+    parser.add_argument("--target", type=int, required=True, help="visitors the log should hold when done")
+    parser.add_argument("--headed", action="store_true", help="show the browser windows")
+    args = parser.parse_args()
+    cfg = load_config()
+    try:
+        run_real(cfg, args.target, OUT_PATH, cfg["site_url"], cfg["real"]["workers"], headed=args.headed)
+    finally:
+        ends = [line for line in read(OUT_PATH) if line["event"] == "visit_end"] if OUT_PATH.exists() else []
+        errors = sum(e["status"] == "error" for e in ends)
+        print(f"{len(ends)} visitors in {OUT_PATH.relative_to(ROOT)}, {errors} errors")
+
+
+if __name__ == "__main__":
+    main()
