@@ -90,6 +90,21 @@ def test_variant_b_has_compare_button(open_page):
     assert page.locator(".card .compare-btn").count() == 200
 
 
+def test_cleared_fields_overwrite_previous_values(open_page):
+    # GTM's data model keeps keys from earlier pushes, so an omitted field would resend the old value.
+    page = open_page("index.html")
+    search(page, q="school", level="high", location="Austin, TX")
+    search(page)
+    page.wait_for_function("() => dataLayer.filter(i => i.event === 'search').length === 2")
+    cleared = page.evaluate("""() => {
+        const s = dataLayer.filter(i => i.event === 'search')[1];
+        return ['search_term', 'school_level', 'location'].map(k => k in s && s[k] === undefined);
+    }""")
+    assert cleared == [True, True, True]
+    [_, second] = events_named(page, "search")
+    assert not {"search_term", "school_level", "location"} & set(second)
+
+
 def test_location_options(open_page):
     # built from data, "Any location" first, then sorted unique "City, ST"
     page = open_page("index.html")

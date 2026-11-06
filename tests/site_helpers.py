@@ -5,16 +5,19 @@ PY_TYPES = {"string": str, "int": int, "bool": bool}
 
 
 def pushes(page) -> list[dict]:
-    """Event pushes only: skips gtag() argument lists and GTM's own gtm.* events."""
+    """Event pushes only: skips gtag() argument lists and GTM's own gtm.* events.
+
+    Keys pushed as undefined (cleared fields) are dropped, so "key absent" means "not sent to GA4".
+    """
     return page.evaluate("""() => (window.dataLayer || []).filter(
         item => item && typeof item.event === 'string' && !item.event.startsWith('gtm.')
-    ).map(item => Object.assign({}, item))""")
+    ).map(item => JSON.parse(JSON.stringify(item)))""")
 
 
 def layer(page) -> list:
-    """Every dataLayer item in order: gtag() calls as lists, event pushes as dicts."""
+    """Every dataLayer item in order: gtag() calls as lists, event pushes as dicts (undefined keys dropped)."""
     return page.evaluate("""() => (window.dataLayer || []).map(
-        item => typeof item.event === 'string' ? Object.assign({}, item) : Array.from(item))""")
+        item => typeof item.event === 'string' ? JSON.parse(JSON.stringify(item)) : Array.from(item))""")
 
 
 def events_named(page, name: str) -> list[dict]:
