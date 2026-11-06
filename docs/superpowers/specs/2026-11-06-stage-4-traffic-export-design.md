@@ -109,7 +109,7 @@ True values: `lead_rate` 15% → 18.75% (+25%); `profile_view_rate` 40% → 44.5
 
 - **Target:** the published site URL in `config.yaml`.
 - **Bot filtering:** regular desktop Chrome user agent (headless Chromium announces `HeadlessChrome`); debug mode never on; before the run, the owner checks that no GA4 internal-traffic filter matches their IP.
-- **Pilot first:** 20 visitors with `-m live`, then the owner checks GA4 Realtime. If nothing shows, fall back to headed mode.
+- **Pilot first:** the run command with a target of 20 visitors (they are the first 20 lines of the real-run log, since their hits reach GA4), then the owner checks GA4 Realtime. If nothing shows, fall back to headed mode. A `-m live` test checks the executor against the published site beforehand with every GA4 request aborted, so it never pollutes the property.
 - **Flush before close:** after the last step, wait until no new `/g/collect` request has been sent for 3 seconds, then close the context. The count of requests sent goes to `ga_requests`.
 - **Failures:** a step that times out marks the visitor `error` with `error_step`; events already pushed stay logged. No retry (a retry would double-send to GA4). The run stops when more than 5% of visitors so far have failed (checked after the first 40).
 - **Pace:** 4 parallel contexts, about 25 minutes for 500 visitors, all on one day.
@@ -139,6 +139,6 @@ Offline (`uv run pytest`):
 - **Synthetic executor:** same seed, identical file; exactly 6,000 visitors; variant, banner and ad-blocker shares within 3 standard errors of their configured values; timestamps inside the 14-day span.
 - **Browser executor:** runs a few visitors against the local test server the suite already starts, with Google hosts aborted; logged events match `events.yaml`; an ad-blocker visitor sends zero requests; a banner click is logged as `consent_update` and an ignored banner is not.
 
-Live (`uv run pytest -m live`): the 20-visitor pilot against the published site, asserting that consented visitors send `/g/collect` requests and get a `_ga` cookie.
+Live (`uv run pytest -m live`): one accepting visitor against the published site with every `/g/collect` request captured and aborted, asserting that requests were sent and a `_ga` client ID was logged.
 
 Acceptance (section 1): a script compares each log with `config.yaml` (counts exact; shares within 3 standard errors) and reports the error rate.
