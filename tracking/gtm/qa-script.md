@@ -26,6 +26,7 @@ Event names and parameters below come from `tracking/events.yaml`; if that file 
 | 10 | `generate_lead` | Tag fired; params `experiment_variant`, `school_id`, `source`, `form_complete` = "true", `lead_type` | | |
 | 11 | No duplicate `view_search_results` | Exactly one `view_search_results` per search in DebugView (enhanced measurement "Site search" is off) | | |
 | 12 | No `form_start` / `form_submit` | Neither event appears in DebugView during the form step ("Form interactions" is off) | | |
+| 12b | No extra `page_view` after a search | A search does not add a `page_view` in DebugView (page views on history changes are off) | | |
 | 13 | Consent denied on first hits | Before accepting, Tag Assistant → Consent tab shows `analytics_storage: denied`; after accepting, `granted` | | |
 | 14 | Custom dimensions registered | GA4 Admin → Custom definitions lists event-scoped `experiment_variant`, `source`, `location`, `school_level`, `school_id`, `form_complete`, `lead_type` | | |
 | 15 | Custom metrics registered | Event-scoped `results_count`, `compare_count`, `list_position` | | |

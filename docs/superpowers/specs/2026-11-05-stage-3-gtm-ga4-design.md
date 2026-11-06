@@ -50,7 +50,7 @@ Types: `results_count`, `list_position` and `compare_count` are sent as numbers.
 Created by the owner, guided step by step:
 
 - Account and property named as demo-only; one web data stream for the GitHub Pages URL.
-- **Enhanced measurement: turn off "Site search" and "Form interactions".** Site search would fire its own `view_search_results` on every URL with `?q=`, which the site uses, doubling every search. Form interactions would add `form_start`/`form_submit` alongside `generate_lead`. Page views and the other enhanced events stay on.
+- **Enhanced measurement: turn off "Site search" and "Form interactions".** Site search would fire its own `view_search_results` on every URL with `?q=`, which the site uses, doubling every search. Form interactions would add `form_start`/`form_submit` alongside `generate_lead`. Page views and the other enhanced events stay on, except page views on browser history changes: each search rewrites the URL with `history.replaceState`, which GA4 would count as an extra `page_view` (seen in GTM Preview on 2026-11-06), so that sub-option is off.
 - Data retention: 14 months (default is 2, which would truncate explorations).
 - `generate_lead` marked as a key event.
 - Custom definitions (event scope), registered by hand from a checklist and verified in the QA script:
