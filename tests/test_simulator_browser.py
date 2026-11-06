@@ -109,3 +109,14 @@ def test_failed_step_is_logged(new_context, site_url, monkeypatch):
     end = lines[-1]
     assert (end["status"], end["error_step"]) == ("error", "search")
     assert [line["event"] for line in lines[:-1]] == ["page_view", "consent_update"]
+
+
+def test_failed_flush_is_logged(new_context, site_url, monkeypatch):
+    def broken_flush(*args):
+        raise browser_run.PlaywrightError("page closed during flush")
+
+    monkeypatch.setattr(browser_run, "_flush", broken_flush)
+    monkeypatch.setattr(browser_run, "plan_visit", lambda *args: Plan("A", None, (), None, None, None))
+    lines = browser_run.visit(new_context(), site_url, "v00005", Visitor("accept", False), TEST_CFG, SCHOOLS, OPTIONS)
+    end = lines[-1]
+    assert (end["status"], end["error_step"]) == ("error", "flush")

@@ -14,7 +14,7 @@ def _visitor(n, variant, banner, blocker, status="ok", client_id=None):
 
 
 def _ok_summary(n: int) -> dict:
-    return {"visitors": n, "share_B": 0.5, "share_accept": 0.55, "share_reject": 0.15, "share_ignore": 0.30,
+    return {"visitors": n, "variant_known": n, "share_B": 0.5, "share_accept": 0.55, "share_reject": 0.15, "share_ignore": 0.30,
             "share_ad_blocker": 0.25, "error_rate": 0.0, "cookieless_visitors": 0}
 
 
@@ -22,8 +22,21 @@ def test_summary_on_hand_built_log():
     lines = (_visitor(1, "A", "accept", False, client_id="1.2") + _visitor(2, "B", "reject", False)
              + _visitor(3, "B", "ignore", True) + _visitor(4, "B", "ignore", False, status="error"))
     assert summarize(lines) == {
-        "visitors": 4, "share_B": 0.75, "share_accept": 0.25, "share_reject": 0.25, "share_ignore": 0.5,
+        "visitors": 4, "variant_known": 4, "share_B": 0.75, "share_accept": 0.25, "share_reject": 0.25, "share_ignore": 0.5,
         "share_ad_blocker": 0.25, "error_rate": 0.25, "cookieless_visitors": 1}
+
+
+def test_share_b_ignores_visitors_without_variant():
+    # a visitor that failed before the site drew a variant counts toward neither group
+    lines = _visitor(1, "A", "accept", False) + _visitor(2, "B", "accept", False) + _visitor(3, None, "accept", False,
+                                                                                            status="error")
+    summary = summarize(lines)
+    assert (summary["visitors"], summary["variant_known"], summary["share_B"]) == (3, 2, 0.5)
+
+
+def test_share_b_bound_uses_visitors_with_variant():
+    # 0.5 ± 3·sqrt(.25/100) = ±0.15: 0.64 passes on 100 visitors with a variant, even if 500 were logged
+    assert problems({**_ok_summary(500), "variant_known": 100, "share_B": 0.64}, CFG, 500) == []
 
 
 def test_problems_flags_wrong_count_and_share():

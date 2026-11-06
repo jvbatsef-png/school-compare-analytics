@@ -20,9 +20,11 @@ def summarize(lines) -> dict:
     def share(test) -> float:
         return sum(1 for e in ends if test(e)) / n if n else 0.0
 
+    known = [e for e in ends if e["variant"] is not None]  # failed before the site drew a variant
     return {
         "visitors": n,
-        "share_B": share(lambda e: e["variant"] == "B"),
+        "variant_known": len(known),
+        "share_B": sum(1 for e in known if e["variant"] == "B") / len(known) if known else 0.0,
         "share_accept": share(lambda e: e["banner"] == "accept"),
         "share_reject": share(lambda e: e["banner"] == "reject"),
         "share_ignore": share(lambda e: e["banner"] == "ignore"),
@@ -45,7 +47,8 @@ def problems(summary: dict, cfg: dict, expected_visitors: int) -> list[str]:
     if n != expected_visitors:
         found.append(f"visitors: {n}, expected {expected_visitors}")
     for key, p in _expected_shares(cfg).items():
-        bound = 3 * math.sqrt(p * (1 - p) / max(n, 1))
+        base = summary["variant_known"] if key == "share_B" else n
+        bound = 3 * math.sqrt(p * (1 - p) / max(base, 1))
         if abs(summary[key] - p) > bound:
             found.append(f"{key}: {summary[key]:.4f}, expected {p} ± {bound:.4f}")
     max_rate = cfg["real"]["max_error_rate"]

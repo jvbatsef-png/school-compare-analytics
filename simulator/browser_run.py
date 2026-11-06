@@ -144,7 +144,7 @@ def visit(context: BrowserContext, site_url: str, visitor_id: str, visitor: Visi
             _wait_event(page, "generate_lead")
             log.collect(page)
 
-        step = None
+        step = "flush"
         real = cfg["real"]
         _flush(page, sent, real["flush_quiet_seconds"], real["flush_max_seconds"])
     except PlaywrightError:
