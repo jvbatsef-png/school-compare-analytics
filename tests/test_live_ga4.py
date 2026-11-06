@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from tests.ga4_hits import LIVE_URL, parse_hits
+from tests.ga4_hits import LIVE_URL, HitLog
 from tests.test_site_compare import toggle
 from tests.test_site_profile import PROFILE_READY, submit_lead
 from tests.test_site_search import card_ids, search
@@ -29,17 +29,17 @@ def live(browser):
     context.set_default_timeout(15000)
     context.add_init_script(
         "if (localStorage.getItem('sca_variant') === null) localStorage.setItem('sca_variant', 'B');")
-    hits: list[dict[str, str]] = []
+    log = HitLog()
 
     def capture(route):
-        hits.extend(parse_hits(route.request.url, route.request.post_data))
+        log.add(route.request.url, route.request.post_data)
         route.abort()
 
     context.route(COLLECT, capture)
     page = context.new_page()
     page.goto(LIVE_URL)
     page.wait_for_load_state("networkidle")
-    yield page, hits
+    yield page, log.hits
     context.close()
 
 
