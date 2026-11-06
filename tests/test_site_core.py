@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from tests.site_helpers import assert_valid, events_named, layer
+from scripts.make_gtm_container import load_ids
+from tests.site_helpers import assert_valid, events_named, layer, pushes
 from tracking.spec import load_spec
 
 SITE_DIR = Path(__file__).parent.parent / "site"
@@ -100,3 +101,40 @@ def test_stored_consent_applied_in_head(open_page, state):
     for path in sorted(SITE_DIR.glob("*.html")):
         html = path.read_text(encoding="utf-8")
         assert -1 < html.find("sca_consent") < html.find("GTM slot"), path.name
+
+
+def test_gtm_snippet_on_every_page():
+    gtm = load_ids()["gtm_container_id"]
+    for path in sorted(SITE_DIR.glob("*.html")):
+        html = path.read_text(encoding="utf-8")
+        snippet_at = html.find("googletagmanager.com/gtm.js")
+        assert html.find("GTM slot") < snippet_at < re.search(r"<script src=", html).start(), path.name
+        assert html.count(gtm) == 2, path.name  # head script + noscript iframe
+        assert re.search(r"<body[^>]*>\s*<noscript><iframe src=\"https://www\.googletagmanager\.com/ns\.html\?id=" + gtm, html), path.name
+        assert 'rel="icon" href="favicon.svg"' in html, path.name
+
+
+def test_site_works_with_gtm_blocked(open_page):
+    # conftest aborts Google requests; the full B journey still pushes every funnel event
+    from tests.test_site_compare import toggle
+    from tests.test_site_profile import PROFILE_READY, submit_lead
+    from tests.test_site_search import card_ids, search
+
+    blocked = []
+    page = open_page("index.html", variant="B")
+    page.context.on("requestfailed", lambda r: blocked.append(r.url))
+    page.reload()
+    search(page)
+    ids = card_ids(page)
+    toggle(page, 1)
+    toggle(page, 2)
+    page.click("#compare-open")
+    names = [p["event"] for p in pushes(page)]
+    page.click(f"#compare-table a[href*='{ids[1]}']")
+    page.wait_for_function(PROFILE_READY)
+    submit_lead(page)
+    page.wait_for_selector("#lead-sent", state="visible")
+    names += [p["event"] for p in pushes(page)]
+    funnel = {e["name"] for e in load_spec()["events"]} - {"consent_update"}
+    assert funnel <= set(names)
+    assert any("googletagmanager.com/gtm.js" in url for url in blocked)

@@ -32,6 +32,12 @@ def test_no_console_errors(open_page, path, variant):
     collect = ("window.__errors = []; window.addEventListener('error', e => window.__errors.push(String(e.message)));"
                "const _err = console.error; console.error = (...a) => { window.__errors.push(a.join(' ')); _err(...a); };")
     page = open_page(path, variant=variant, consent=None, init_scripts=(collect,))
+    origin = page.url.split("/", 3)[:3]
+    failed = []
+    page.on("response", lambda r: failed.append(f"{r.status} {r.url}")
+            if r.status >= 400 and r.url.split("/", 3)[:3] == origin else None)
+    page.reload()  # listen from the first request
     page.wait_for_load_state("networkidle")
     assert page.evaluate("typeof SCA === 'object' && typeof SCA.track") == "function"
     assert page.evaluate("window.__errors") == []
+    assert failed == []

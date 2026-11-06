@@ -1,6 +1,7 @@
 """Serve site/ locally and open pages with a seeded variant and consent choice."""
 import functools
 import json
+import re
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 import pytest
 
 SITE_DIR = Path(__file__).parent.parent / "site"
+GOOGLE = re.compile(r"https://([a-z0-9-]+\.)*(googletagmanager|google-analytics)\.com/")
 
 
 class _QuietHandler(SimpleHTTPRequestHandler):
@@ -39,6 +41,8 @@ def open_page(browser, site_url):
         context = browser.new_context()
         context.set_default_timeout(5000)
         contexts.append(context)
+        # The default suite stays offline: GTM and GA4 requests never leave the machine.
+        context.route(GOOGLE, lambda route: route.abort())
         seeds = {k: v for k, v in {"sca_variant": variant, "sca_consent": consent}.items() if v}
         # Seed only absent keys, so the page's own writes survive a reload.
         context.add_init_script(
