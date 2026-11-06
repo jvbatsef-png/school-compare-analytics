@@ -1,0 +1,38 @@
+# Every number the simulator uses. Spec: docs/superpowers/specs/2026-11-06-stage-4-traffic-export-design.md
+seed: 20261106
+site_url: https://jvbatsef-png.github.io/school-compare-analytics/
+
+real:
+  visitors: 500
+  workers: 4
+  max_error_rate: 0.05
+  min_visitors_before_abort: 40
+  flush_quiet_seconds: 3
+  flush_max_seconds: 15
+
+synthetic:
+  visitors: 6000
+  start_date: "2026-10-12"
+  days: 14
+
+banner:
+  accept: 0.55
+  reject: 0.15
+  ignore: 0.30
+
+ad_blocker: 0.25
+
+funnel:
+  search: 0.85
+  compare_b: 0.30
+  profile:
+    no_compare: 0.40
+    compare: 0.55
+  lead_given_profile:
+    no_compare: 0.375
+    compare: 0.50
+  complete_lead: 0.70
+
+bigquery:
+  project: null
+  dataset: null
