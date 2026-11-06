@@ -78,3 +78,12 @@ def test_synthetic_timestamps(full):
         for ts in stamps:
             t = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
             assert start <= t < end and 12 <= t.hour <= 23
+
+
+def test_read_drops_torn_last_line(tmp_path):
+    path = tmp_path / "log.jsonl"
+    lines = visitor_lines("real", "v00001", "A", Visitor("accept", False), [], None, 0, "ok", None)
+    append(path, lines)
+    with path.open("a", encoding="utf-8") as f:
+        f.write('{"run": "real", "visitor_id": "v0000')  # killed mid-write
+    assert read(path) == lines

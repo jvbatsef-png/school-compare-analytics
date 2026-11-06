@@ -71,10 +71,12 @@ One JSON object per line, one line per event:
 | `ga_requests` | int | `/g/collect` requests the browser sent for this visitor (real run; null in synthetic); written on the `visit_end` line |
 | `status` | string | `ok` or `error`, on the `visit_end` line |
 | `error_step` | string or null | the step that failed |
-| `event` | string | a name from `tracking/events.yaml`, `page_view`, or `visit_end` |
+| `event` | string | a name from `tracking/events.yaml`, `page_view`, `visit_start` (real run) or `visit_end` |
 | `params` | object | the event's parameters, keys as in `events.yaml` |
 
 `visit_end` closes every visitor and carries `status`, `error_step` and `ga_requests`.
+
+In the real run, a `visit_start` line (`seq` 0, variant still unknown) is written before the browser opens the page. A visitor with `visit_start` but no `visit_end` was cut off by a crash: on resume it is closed as `error` / `interrupted`, counted toward the target and never run again, because its hits may already have reached GA4. A last line torn by a kill mid-write is dropped on resume.
 
 ## 5. Behaviour model
 

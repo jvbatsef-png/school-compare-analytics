@@ -1,4 +1,9 @@
 """Real-run runner: resume after a crash, abort threshold, parallel run against the local site."""
+import threading
+
+import pytest
+
+from simulator import browser_run
 from simulator.behavior import Visitor, load_config
 from simulator.browser_run import close_interrupted, next_ids, run_real, should_abort
 from simulator.ground_truth import read, visitor_lines
@@ -50,3 +55,60 @@ def test_run_real_offline(tmp_path, site_url):
     ends = [line for line in read(out) if line["event"] == "visit_end"]
     assert sorted(e["visitor_id"] for e in ends) == [f"v{n:05d}" for n in range(1, 6)]
     assert all(e["status"] == "ok" for e in ends), [e["error_step"] for e in ends]
+
+
+def _fake_visit(calls, fail_on=None):
+    def fake(context, site_url, visitor_id, visitor, cfg, schools, options):
+        calls.append(visitor_id)
+        if visitor_id == fail_on:
+            raise RuntimeError("process killed mid-visit")
+        return visitor_lines("real", visitor_id, "A", visitor, EVENT, None, 1, "ok", None)
+    return fake
+
+
+def test_killed_visitor_is_closed_not_rerun(tmp_path, site_url, monkeypatch):
+    out = tmp_path / "real.jsonl"
+    calls = []
+    monkeypatch.setattr(browser_run, "visit", _fake_visit(calls, fail_on="v00002"))
+    with pytest.raises(RuntimeError):
+        run_real(FAST, 3, out, site_url, workers=1, offline=True)
+    monkeypatch.setattr(browser_run, "visit", _fake_visit(calls))
+    run_real(FAST, 3, out, site_url, workers=1, offline=True)
+    assert calls == ["v00001", "v00002", "v00003"]  # v00002 never visits twice
+    ends = {e["visitor_id"]: e for e in read(out) if e["event"] == "visit_end"}
+    assert sorted(ends) == ["v00001", "v00002", "v00003"]
+    assert (ends["v00002"]["status"], ends["v00002"]["error_step"]) == ("error", "interrupted")
+
+
+def test_next_ids_fills_gaps():
+    lines = _visitor(1) + _visitor(3)
+    assert next_ids(lines, 4) == ["v00002", "v00004"]
+
+
+def test_ctrl_c_lets_running_visitors_finish():
+    stop = threading.Event()
+
+    class Worker:
+        joins = 0
+
+        def join(self):
+            Worker.joins += 1
+            if Worker.joins == 1:
+                raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        browser_run._join_all([Worker()], stop)
+    assert stop.is_set() and Worker.joins == 2
+
+
+def test_resume_after_torn_write(tmp_path, site_url, monkeypatch):
+    out = tmp_path / "real.jsonl"
+    calls = []
+    monkeypatch.setattr(browser_run, "visit", _fake_visit(calls))
+    run_real(FAST, 1, out, site_url, workers=1, offline=True)
+    with out.open("a", encoding="utf-8") as f:
+        f.write('{"run": "real", "visitor_id": "v0000')  # killed mid-write
+    run_real(FAST, 2, out, site_url, workers=1, offline=True)
+    ends = [line["visitor_id"] for line in read(out) if line["event"] == "visit_end"]
+    assert ends == ["v00001", "v00002"]
+    assert out.read_text(encoding="utf-8").endswith("\n")

@@ -16,7 +16,7 @@ from playwright.sync_api import BrowserContext, Error as PlaywrightError, sync_p
 from simulator.behavior import (
     ROOT, Search, Visitor, draw_visitor, load_config, load_schools, plan_visit, search_options, visitor_rng,
 )
-from simulator.ground_truth import append, by_visitor, read, utc_now, visitor_lines
+from simulator.ground_truth import append, by_visitor, drop_torn_tail, read, start_line, utc_now, visitor_lines
 
 OUT_PATH = ROOT / "simulator" / "runs" / "real_run.jsonl"
 VISIT_TIMEOUT_MS = 15000
@@ -175,9 +175,9 @@ def close_interrupted(lines: list[dict]) -> list[dict]:
 
 
 def next_ids(lines: list[dict], target: int) -> list[str]:
-    done = [int(v[1:]) for v in by_visitor(lines)]
-    start = max(done, default=0) + 1
-    return [f"v{n:05d}" for n in range(start, target + 1)]
+    """Ids up to `target` with no line yet; an id with any line (even visit_start) is never run again."""
+    done = set(by_visitor(lines))
+    return [f"v{n:05d}" for n in range(1, target + 1) if f"v{n:05d}" not in done]
 
 
 def should_abort(lines: list[dict], max_rate: float, min_finished: int) -> bool:
@@ -187,9 +187,23 @@ def should_abort(lines: list[dict], max_rate: float, min_finished: int) -> bool:
     return sum(e["status"] == "error" for e in ends) / len(ends) > max_rate
 
 
+def _join_all(threads, stop: threading.Event) -> None:
+    """Ctrl-C stops new visitors but lets the ones in flight finish and be logged, then re-raises."""
+    try:
+        for thread in threads:
+            thread.join()
+    except KeyboardInterrupt:
+        stop.set()
+        for thread in threads:
+            thread.join()
+        raise
+
+
 def run_real(cfg: dict, target: int, out_path: Path, site_url: str, workers: int,
              offline: bool = False, headed: bool = False) -> None:
     """Run visitors until out_path holds `target` of them; `offline` aborts Google hosts (tests only)."""
+    if out_path.exists():
+        drop_torn_tail(out_path)
     existing = read(out_path) if out_path.exists() else []
     closed = close_interrupted(existing)
     if closed:
@@ -214,20 +228,23 @@ def run_real(cfg: dict, target: int, out_path: Path, site_url: str, workers: int
                     except queue.Empty:
                         break
                     visitor = draw_visitor(visitor_rng(cfg["seed"], visitor_id), cfg)
+                    with lock:  # on record before any request leaves the browser
+                        append(out_path, [start_line("real", visitor_id, visitor)])
                     context = browser.new_context(user_agent=USER_AGENT, viewport={"width": 1366, "height": 768})
                     context.set_default_timeout(VISIT_TIMEOUT_MS)
                     if offline:
                         context.route(GOOGLE_HOSTS, lambda route: route.abort())
-                    try:
-                        lines = visit(context, site_url, visitor_id, visitor, cfg, schools, options)
-                    finally:
-                        context.close()
+                    lines = visit(context, site_url, visitor_id, visitor, cfg, schools, options)
                     with lock:
                         append(out_path, lines)
                         ends.append(lines[-1])
                         real = cfg["real"]
                         if should_abort(ends, real["max_error_rate"], real["min_visitors_before_abort"]):
                             stop.set()
+                    try:
+                        context.close()
+                    except PlaywrightError:
+                        pass  # the visitor is logged; a dead browser surfaces on the next new_context
                 browser.close()
         except BaseException as exc:  # a broken worker stops the run instead of dying silently
             failures.append(exc)
@@ -236,8 +253,7 @@ def run_real(cfg: dict, target: int, out_path: Path, site_url: str, workers: int
     threads = [threading.Thread(target=worker) for _ in range(workers)]
     for thread in threads:
         thread.start()
-    for thread in threads:
-        thread.join()
+    _join_all(threads, stop)
     if failures:
         raise failures[0]
     if stop.is_set():
