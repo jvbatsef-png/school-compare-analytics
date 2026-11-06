@@ -33,6 +33,4 @@ funnel:
     compare: 0.50
   complete_lead: 0.70
 
-bigquery:
-  project: null
-  dataset: null
+# The BigQuery project and dataset live in .env (BQ_PROJECT, BQ_DATASET), outside git.
