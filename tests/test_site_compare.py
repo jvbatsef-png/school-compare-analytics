@@ -92,3 +92,14 @@ def test_open_click_while_open_fires_nothing(open_page):
     page.click("#compare-open")
     page.click("#compare-open", force=True)
     assert len(events_named(page, "compare_view")) == 1
+
+
+def test_open_reachable_with_banner_showing(open_page):
+    """A visitor who ignores the cookie banner can still open the comparison (the banner must not cover the tray)."""
+    page = open_page("index.html", variant="B", consent=None)
+    search(page)
+    assert page.is_visible("#consent-banner")
+    toggle(page, 1)
+    toggle(page, 2)
+    page.click("#compare-open", timeout=2000)
+    assert len(events_named(page, "compare_view")) == 1

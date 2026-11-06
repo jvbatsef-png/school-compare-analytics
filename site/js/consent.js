@@ -12,11 +12,15 @@ window.SCA = window.SCA || {};
 
   function banner() { return document.getElementById("consent-banner"); }
 
+  // The banner is fixed at the bottom; sticky elements (the compare tray) sit above it while it shows.
+  function reserve(px) { document.documentElement.style.setProperty("--banner-height", px + "px"); }
+
   SCA.consent = {
     save: function (state) {
       update(state);
       try { localStorage.setItem(KEY, state); } catch (e) { /* storage blocked: the choice lasts for this page only */ }
       banner().hidden = true;
+      reserve(0);
       SCA.track("consent_update", { analytics_storage: state, ad_storage: state });
     }
   };
@@ -26,6 +30,7 @@ window.SCA = window.SCA || {};
     try { stored = localStorage.getItem(KEY); } catch (e) { /* storage blocked */ }
     if (stored === "granted" || stored === "denied") return; // re-applied inline in <head>
     banner().hidden = false;
+    reserve(banner().offsetHeight);
     document.getElementById("consent-accept").addEventListener("click", function () { SCA.consent.save("granted"); });
     document.getElementById("consent-reject").addEventListener("click", function () { SCA.consent.save("denied"); });
   });
